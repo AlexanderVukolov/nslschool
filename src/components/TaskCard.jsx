@@ -1,5 +1,6 @@
-import { DEPARTMENTS, EMPLOYEES, PRIORITIES, byId } from '../data.js'
+import { DEPARTMENTS, PRIORITIES, byId } from '../data.js'
 import { deadlineState, formatDate } from '../useStore.js'
+import { personById } from '../auth.js'
 
 export function initials(name) {
   if (!name) return '?'
@@ -16,7 +17,7 @@ export function avatarColor(id) {
 }
 
 export function Avatar({ userId }) {
-  const user = byId(EMPLOYEES, userId)
+  const user = personById(userId)
   if (!user) {
     return (
       <span className="avatar">

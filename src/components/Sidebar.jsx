@@ -1,9 +1,11 @@
 import { DEPARTMENTS, byId } from '../data.js'
 
-// Навигация: обзор, все задачи и фильтр по отделам
-export default function Sidebar({ tasks, view, filters, onView, onSelectDept }) {
+// Навигация: обзор, мои задачи, все задачи и фильтр по отделам
+export default function Sidebar({ tasks, view, filters, user, onView, onSelectDept, onMyTasks }) {
   const countByDept = (id) => tasks.filter((t) => t.dept === id).length
   const activeDepts = DEPARTMENTS.filter((d) => countByDept(d.id) > 0)
+  const myCount = user ? tasks.filter((t) => t.assignee === user.id).length : 0
+  const isMyTasks = view !== 'dashboard' && filters.assignee === user?.id
 
   return (
     <aside className="sidebar">
@@ -22,8 +24,12 @@ export default function Sidebar({ tasks, view, filters, onView, onSelectDept }) 
         >
           📈 Обзор
         </button>
+        <button className={`nav-item ${isMyTasks ? 'active' : ''}`} onClick={onMyTasks}>
+          ⭐ Мои задачи
+          <span className="count">{myCount}</span>
+        </button>
         <button
-          className={`nav-item ${view !== 'dashboard' && filters.dept === 'all' ? 'active' : ''}`}
+          className={`nav-item ${view !== 'dashboard' && !isMyTasks && filters.dept === 'all' ? 'active' : ''}`}
           onClick={() => {
             onView('board')
             onSelectDept('all')

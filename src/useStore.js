@@ -3,10 +3,24 @@ import { SEED_TASKS, PRIORITIES, byId } from './data.js'
 
 const STORAGE_KEY = 'nsl-tasks-v1'
 
+// Миграция id отделов из ранних версий на актуальную структуру NSL
+const DEPT_MIGRATION = {
+  education: 'product',
+  methodology: 'product',
+  curators: 'curation',
+  marketing: 'smm',
+  content: 'smm',
+  support: 'curation',
+  hr: 'admin',
+}
+
 function loadTasks() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const tasks = JSON.parse(raw)
+      return tasks.map((t) => (DEPT_MIGRATION[t.dept] ? { ...t, dept: DEPT_MIGRATION[t.dept] } : t))
+    }
   } catch (e) {
     console.warn('Не удалось прочитать сохранённые задачи:', e)
   }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { DEPARTMENTS, EMPLOYEES, STATUSES, PRIORITIES } from '../data.js'
+import { DEPARTMENTS, STATUSES, PRIORITIES } from '../data.js'
+import { getAllPeople } from '../auth.js'
 
 const blank = {
   title: '',
@@ -25,8 +26,8 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
-  // Сотрудники: сначала из выбранного отдела, затем остальные
-  const sortedEmployees = [...EMPLOYEES].sort((a, b) => {
+  // Люди (аккаунты + сотрудники): сначала из выбранного отдела, затем остальные
+  const sortedEmployees = getAllPeople().sort((a, b) => {
     if (a.dept === form.dept && b.dept !== form.dept) return -1
     if (b.dept === form.dept && a.dept !== form.dept) return 1
     return 0
