@@ -109,8 +109,16 @@ export function getCurrentUser() {
   }
 }
 
+// В удалённом режиме список людей приходит из базы (profiles) —
+// компоненты берут его из этого кэша через те же getAllPeople/personById.
+let peopleCache = null
+export function setPeopleCache(list) {
+  peopleCache = list
+}
+
 // Все люди, доступные как ответственные: штатные сотрудники + зарегистрированные аккаунты
 export function getAllPeople() {
+  if (peopleCache) return peopleCache
   const accounts = loadUsers().map(publicUser)
   return [...accounts, ...EMPLOYEES]
 }

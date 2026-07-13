@@ -1,7 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DEPARTMENTS, PRIORITIES, byId } from './data.js'
 import { useStore, useFilteredTasks, deadlineState } from './useStore.js'
-import { getCurrentUser, getAllPeople, clearSession } from './auth.js'
+import { getCurrentUser, getAllPeople, clearSession, setPeopleCache } from './auth.js'
+import { isRemoteMode } from './config.js'
+import { useRemoteStore } from './useRemoteStore.js'
+import {
+  remoteGetUser,
+  remoteSignOut,
+  fetchProfiles,
+  fetchNotifications,
+  insertNotification,
+  markAllReadRemote,
+  clearNotifsRemote,
+  subscribeNotifications,
+} from './remote.js'
 import Sidebar from './components/Sidebar.jsx'
 import Board from './components/Board.jsx'
 import TaskList from './components/TaskList.jsx'
@@ -22,25 +34,65 @@ const DEFAULT_FILTERS = {
   sort: 'default',
 }
 
+const REMOTE = isRemoteMode()
+
 export default function App() {
-  const store = useStore()
-  const [user, setUser] = useState(getCurrentUser)
+  const localStore = useStore()
+  const [user, setUser] = useState(REMOTE ? null : getCurrentUser)
+  const [authLoading, setAuthLoading] = useState(REMOTE)
+  const remoteStore = useRemoteStore(REMOTE, user)
+  const store = REMOTE ? remoteStore : localStore
   const [view, setView] = useState('board') // 'board' | 'list' | 'dashboard'
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [modal, setModal] = useState(null) // null | 'new' | task object
   const [menuOpen, setMenuOpen] = useState(false)
-  const [notifications, setNotifications] = useState(loadNotifications)
+  const [notifications, setNotifications] = useState(REMOTE ? [] : loadNotifications)
+  const [, setPeopleVersion] = useState(0) // тик после загрузки profiles, чтобы обновить аватары
+
+  // Удалённый режим: восстановление сессии при открытии
+  useEffect(() => {
+    if (!REMOTE) return
+    remoteGetUser()
+      .then((u) => setUser(u))
+      .finally(() => setAuthLoading(false))
+  }, [])
+
+  // Удалённый режим: команда (profiles), мои уведомления + живая доставка
+  useEffect(() => {
+    if (!REMOTE || !user) return
+    fetchProfiles()
+      .then((list) => {
+        setPeopleCache(list)
+        setPeopleVersion((v) => v + 1)
+      })
+      .catch((e) => console.warn('Не удалось загрузить сотрудников:', e))
+    fetchNotifications()
+      .then(setNotifications)
+      .catch((e) => console.warn('Не удалось загрузить уведомления:', e))
+    const channel = subscribeNotifications(user.id, (n) =>
+      setNotifications((list) => [n, ...list]),
+    )
+    return () => channel?.unsubscribe()
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useFilteredTasks(store.tasks, filters)
   const setFilter = (k, v) => setFilters((f) => ({ ...f, [k]: v }))
 
+  if (authLoading) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card" style={{ textAlign: 'center' }}>🌿 Загрузка…</div>
+      </div>
+    )
+  }
   if (!user) return <AuthScreen onAuth={setUser} />
 
   const people = getAllPeople()
   const userDept = user.dept ? byId(DEPARTMENTS, user.dept) : null
 
   const logout = () => {
-    clearSession()
+    if (REMOTE) remoteSignOut()
+    else clearSession()
     setUser(null)
     setMenuOpen(false)
   }
@@ -57,15 +109,37 @@ export default function App() {
   // Уведомить всех ответственных, что их задача переведена в «Готово»
   const notifyDone = (task) => {
     for (const userId of task?.assignees || []) {
-      setNotifications((list) =>
-        pushNotification(list, {
+      if (REMOTE) {
+        // Своё уведомление придёт мгновенно; чужие доставит realtime подписка адресата
+        insertNotification({
           userId,
           taskId: task.id,
           taskTitle: task.title,
           byName: user.name,
-        }),
-      )
+        }).catch((e) => console.warn('Уведомление не отправлено:', e))
+      } else {
+        setNotifications((list) =>
+          pushNotification(list, {
+            userId,
+            taskId: task.id,
+            taskTitle: task.title,
+            byName: user.name,
+          }),
+        )
+      }
     }
+  }
+
+  const handleMarkAllRead = () => {
+    setNotifications((list) =>
+      REMOTE ? list.map((n) => (n.userId === user.id ? { ...n, read: true } : n)) : markAllRead(list, user.id),
+    )
+    if (REMOTE) markAllReadRemote(user.id)
+  }
+
+  const handleClearNotifs = () => {
+    setNotifications((list) => (REMOTE ? list.filter((n) => n.userId !== user.id) : clearForUser(list, user.id)))
+    if (REMOTE) clearNotifsRemote(user.id)
   }
 
   const handleSave = (data) => {
@@ -150,8 +224,8 @@ export default function App() {
               userId={user.id}
               tasksById={tasksById}
               onOpenTask={openTask}
-              onMarkAllRead={() => setNotifications((list) => markAllRead(list, user.id))}
-              onClear={() => setNotifications((list) => clearForUser(list, user.id))}
+              onMarkAllRead={handleMarkAllRead}
+              onClear={handleClearNotifs}
             />
 
             <div className="user-menu">
@@ -230,6 +304,13 @@ export default function App() {
                 Список
               </button>
             </div>
+          </div>
+        )}
+
+        {REMOTE && store.error && (
+          <div className="db-error">
+            ⚠ Не удалось загрузить данные из базы. Если это первый запуск — выполните файл{' '}
+            <b>supabase/schema.sql</b> в Supabase → SQL Editor и обновите страницу.
           </div>
         )}
 

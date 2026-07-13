@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DEPARTMENTS, STATUSES, PRIORITIES } from '../data.js'
 import { getAllPeople } from '../auth.js'
+import { isRemoteMode } from '../config.js'
+import { uploadAttachment } from '../remote.js'
 
 const blank = {
   title: '',
@@ -16,8 +18,8 @@ const blank = {
   attachments: [],
 }
 
-// Лимит на файл: localStorage вмещает ~5 МБ на весь задачник
-const MAX_FILE_SIZE = 1.5 * 1024 * 1024
+// Лимит на файл: в облаке — 25 МБ, в демо-режиме localStorage вмещает ~5 МБ
+const MAX_FILE_SIZE = isRemoteMode() ? 25 * 1024 * 1024 : 1.5 * 1024 * 1024
 
 const attachId = () => `a${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`
 
@@ -112,14 +114,25 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
         )
         continue
       }
-      const dataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result)
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      }).catch(() => null)
-      if (dataUrl) {
-        added.push({ id: attachId(), type: 'file', name: file.name, size: file.size, url: dataUrl })
+      if (isRemoteMode()) {
+        // Облако: загружаем в хранилище Supabase, в задаче храним ссылку
+        try {
+          const url = await uploadAttachment(file)
+          added.push({ id: attachId(), type: 'file', name: file.name, size: file.size, url })
+        } catch (e) {
+          console.warn('Загрузка файла не удалась:', e)
+          setAttachError(`Не удалось загрузить «${file.name}» — попробуйте ещё раз`)
+        }
+      } else {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        }).catch(() => null)
+        if (dataUrl) {
+          added.push({ id: attachId(), type: 'file', name: file.name, size: file.size, url: dataUrl })
+        }
       }
     }
     if (added.length > 0) {

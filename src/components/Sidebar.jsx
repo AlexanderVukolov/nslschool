@@ -1,4 +1,5 @@
 import { DEPARTMENTS, byId } from '../data.js'
+import { isRemoteMode } from '../config.js'
 
 // Навигация: обзор, мои задачи, все задачи и фильтр по отделам
 export default function Sidebar({ tasks, view, filters, user, onView, onSelectDept, onMyTasks }) {
@@ -57,7 +58,9 @@ export default function Sidebar({ tasks, view, filters, user, onView, onSelectDe
       </nav>
 
       <div className="sidebar-footer">
-        Данные хранятся локально в браузере.
+        {isRemoteMode()
+          ? 'Общая база команды: изменения видят все.'
+          : 'Данные хранятся локально в браузере.'}
       </div>
     </aside>
   )

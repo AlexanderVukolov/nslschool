@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { DEPARTMENTS } from '../data.js'
 import { loginUser, registerUser } from '../auth.js'
+import { isRemoteMode } from '../config.js'
+import { remoteSignIn, remoteSignUp } from '../remote.js'
 
 // Экран входа и регистрации личного кабинета
 export default function AuthScreen({ onAuth }) {
@@ -13,6 +15,7 @@ export default function AuthScreen({ onAuth }) {
     role: '',
   })
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
@@ -20,18 +23,38 @@ export default function AuthScreen({ onAuth }) {
   const switchMode = (m) => {
     setMode(m)
     setError('')
+    setInfo('')
   }
 
   const submit = async (e) => {
     e.preventDefault()
     setError('')
+    setInfo('')
     setBusy(true)
     try {
-      const user =
-        mode === 'login'
-          ? await loginUser(form.email, form.password)
-          : await registerUser(form)
-      onAuth(user)
+      if (isRemoteMode()) {
+        if (mode === 'login') {
+          onAuth(await remoteSignIn(form.email, form.password))
+        } else {
+          if (!form.name.trim()) throw new Error('Укажите имя и фамилию')
+          const res = await remoteSignUp(form)
+          if (res.needsConfirm) {
+            setMode('login')
+            setInfo(
+              `Мы отправили письмо на ${form.email.trim()}. ` +
+                'Перейдите по ссылке из письма, чтобы подтвердить адрес, и войдите.',
+            )
+          } else {
+            onAuth(res.user)
+          }
+        }
+      } else {
+        const user =
+          mode === 'login'
+            ? await loginUser(form.email, form.password)
+            : await registerUser(form)
+        onAuth(user)
+      }
     } catch (err) {
       setError(err.message || 'Что-то пошло не так, попробуйте ещё раз')
     } finally {
@@ -115,6 +138,7 @@ export default function AuthScreen({ onAuth }) {
         </div>
 
         {error && <div className="auth-error">{error}</div>}
+        {info && <div className="auth-info">{info}</div>}
 
         <button className="btn btn-primary auth-submit" disabled={busy}>
           {busy ? 'Секунду…' : mode === 'login' ? 'Войти в кабинет' : 'Создать кабинет'}
@@ -137,7 +161,9 @@ export default function AuthScreen({ onAuth }) {
         </p>
 
         <p className="auth-note">
-          Демо-режим: аккаунты и задачи хранятся в этом браузере.
+          {isRemoteMode()
+            ? 'Общая база команды: вход по email с подтверждением.'
+            : 'Демо-режим: аккаунты и задачи хранятся в этом браузере.'}
         </p>
       </form>
     </div>
