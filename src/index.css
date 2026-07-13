@@ -835,6 +835,55 @@ textarea {
   margin: 0;
 }
 
+/* ===== Несколько ответственных ===== */
+.assignee-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.assignee-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  border: 1px solid #bbe3c8;
+  border-radius: 20px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.assignee-chip:hover {
+  background: #f8d7d7;
+  border-color: #f0b9b9;
+  color: var(--danger);
+}
+.avatar-stack {
+  display: inline-flex;
+  align-items: center;
+}
+.avatar-stack .circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--surface);
+  margin-left: -7px;
+}
+.avatar-stack .circle:first-child {
+  margin-left: 0;
+}
+.avatar-stack .circle.more {
+  background: var(--muted);
+  font-size: 9.5px;
+}
+
 /* ===== Вложения ===== */
 .attach-controls {
   display: flex;

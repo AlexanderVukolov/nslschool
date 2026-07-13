@@ -54,17 +54,18 @@ export default function App() {
   const openTask = (task) => setModal(task)
   const closeModal = () => setModal(null)
 
-  // Уведомить ответственного, что его задача переведена в «Готово»
+  // Уведомить всех ответственных, что их задача переведена в «Готово»
   const notifyDone = (task) => {
-    if (!task?.assignee) return
-    setNotifications((list) =>
-      pushNotification(list, {
-        userId: task.assignee,
-        taskId: task.id,
-        taskTitle: task.title,
-        byName: user.name,
-      }),
-    )
+    for (const userId of task?.assignees || []) {
+      setNotifications((list) =>
+        pushNotification(list, {
+          userId,
+          taskId: task.id,
+          taskTitle: task.title,
+          byName: user.name,
+        }),
+      )
+    }
   }
 
   const handleSave = (data) => {

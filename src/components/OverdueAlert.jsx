@@ -28,12 +28,14 @@ export default function OverdueAlert({ overdueTasks, onShow, onOpenTask }) {
       </div>
       <ul className="toast-list">
         {shown.map((t) => {
-          const person = personById(t.assignee)
+          const person = personById((t.assignees || [])[0])
+          const extra = (t.assignees || []).length - 1
           return (
             <li key={t.id} onClick={() => onOpenTask(t)}>
               <span className="toast-task-title">{t.title}</span>
               <span className="toast-task-meta">
-                до {formatDate(t.due)}{person ? ` · ${person.name.split(' ')[0]}` : ''}
+                до {formatDate(t.due)}
+                {person ? ` · ${person.name.split(' ')[0]}${extra > 0 ? ` +${extra}` : ''}` : ''}
               </span>
             </li>
           )

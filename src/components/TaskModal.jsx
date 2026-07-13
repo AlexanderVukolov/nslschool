@@ -8,7 +8,7 @@ const blank = {
   measure: '',
   relevance: '',
   dept: DEPARTMENTS[0].id,
-  assignee: '',
+  assignees: [],
   status: 'todo',
   priority: 'medium',
   due: '',
@@ -33,7 +33,7 @@ export function smartCheck(form) {
   return {
     S: form.title.trim().length >= 5,
     M: form.measure.trim().length >= 3,
-    A: Boolean(form.assignee),
+    A: form.assignees.length > 0,
     R: form.relevance.trim().length >= 3,
     T: Boolean(form.due),
   }
@@ -57,7 +57,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (task) setForm({ ...blank, ...task, assignee: task.assignee || '' })
+    if (task) setForm({ ...blank, ...task, assignees: task.assignees || [] })
     else setForm(blank)
     setError('')
   }, [task])
@@ -141,7 +141,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
       )
       return
     }
-    onSave({ ...form, assignee: form.assignee || null })
+    onSave(form)
     onClose()
   }
 
@@ -195,14 +195,41 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
           <div className="field-row">
             <div className="field">
               <label>
-                Ответственный <span className="smart-mark">A — достижимость</span>
+                Ответственные <span className="smart-mark">A — достижимость</span>
               </label>
-              <select value={form.assignee || ''} onChange={(e) => set('assignee', e.target.value)}>
-                <option value="">Не назначен</option>
-                {sortedEmployees.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name} — {u.role}</option>
-                ))}
+              <select
+                value=""
+                onChange={(e) => {
+                  const id = e.target.value
+                  if (id && !form.assignees.includes(id)) set('assignees', [...form.assignees, id])
+                }}
+              >
+                <option value="">
+                  {form.assignees.length > 0 ? '+ Добавить ещё…' : 'Выберите сотрудника…'}
+                </option>
+                {sortedEmployees
+                  .filter((u) => !form.assignees.includes(u.id))
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>{u.name} — {u.role}</option>
+                  ))}
               </select>
+              {form.assignees.length > 0 && (
+                <div className="assignee-chips">
+                  {form.assignees.map((id) => {
+                    const person = sortedEmployees.find((u) => u.id === id)
+                    return (
+                      <span
+                        className="assignee-chip"
+                        key={id}
+                        onClick={() => set('assignees', form.assignees.filter((x) => x !== id))}
+                        title="Убрать ответственного"
+                      >
+                        {person?.name || 'Неизвестный'} ×
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
             </div>
             <div className="field">
               <label>Отдел</label>

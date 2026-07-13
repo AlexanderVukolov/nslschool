@@ -1,6 +1,6 @@
 import { DEPARTMENTS, STATUSES, PRIORITIES, byId } from '../data.js'
 import { deadlineState, formatDate } from '../useStore.js'
-import { Avatar } from './TaskCard.jsx'
+import { AvatarStack } from './TaskCard.jsx'
 
 // Табличное представление задач
 export default function TaskList({ tasks, onOpenTask }) {
@@ -36,7 +36,7 @@ export default function TaskList({ tasks, onOpenTask }) {
               </span>
             </span>
             <span className="hide-sm">
-              <Avatar userId={t.assignee} />
+              <AvatarStack userIds={t.assignees} />
             </span>
             <span className="hide-sm">
               <span className="chip" style={{ background: (st?.color || '#888') + '1a', color: st?.color }}>

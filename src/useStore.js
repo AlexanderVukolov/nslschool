@@ -19,7 +19,15 @@ function loadTasks() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const tasks = JSON.parse(raw)
-      return tasks.map((t) => (DEPT_MIGRATION[t.dept] ? { ...t, dept: DEPT_MIGRATION[t.dept] } : t))
+      return tasks.map((t) => {
+        const next = DEPT_MIGRATION[t.dept] ? { ...t, dept: DEPT_MIGRATION[t.dept] } : { ...t }
+        // Миграция: одиночный assignee -> массив assignees
+        if (!Array.isArray(next.assignees)) {
+          next.assignees = next.assignee ? [next.assignee] : []
+        }
+        delete next.assignee
+        return next
+      })
     }
   } catch (e) {
     console.warn('Не удалось прочитать сохранённые задачи:', e)
@@ -55,7 +63,7 @@ export function useStore() {
       measure: data.measure?.trim() || '',
       relevance: data.relevance?.trim() || '',
       dept: data.dept,
-      assignee: data.assignee || null,
+      assignees: data.assignees || [],
       status: data.status || 'todo',
       priority: data.priority || 'medium',
       due: data.due || '',
@@ -115,7 +123,7 @@ export function useFilteredTasks(tasks, filters) {
     const q = filters.query.trim().toLowerCase()
     let list = tasks.filter((t) => {
       if (filters.dept !== 'all' && t.dept !== filters.dept) return false
-      if (filters.assignee !== 'all' && t.assignee !== filters.assignee) return false
+      if (filters.assignee !== 'all' && !(t.assignees || []).includes(filters.assignee)) return false
       if (filters.priority !== 'all' && t.priority !== filters.priority) return false
       if (filters.onlyOverdue && deadlineState(t.due) !== 'overdue') return false
       if (q) {

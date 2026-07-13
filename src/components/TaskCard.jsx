@@ -16,6 +16,26 @@ export function avatarColor(id) {
   return palette[h]
 }
 
+// Стопка аватаров нескольких ответственных: до 3 кружков + счётчик
+export function AvatarStack({ userIds }) {
+  const ids = userIds || []
+  if (ids.length === 0) return <Avatar userId={null} />
+  if (ids.length === 1) return <Avatar userId={ids[0]} />
+  const people = ids.map((id) => personById(id)).filter(Boolean)
+  const shown = people.slice(0, 3)
+  const rest = people.length - shown.length
+  return (
+    <span className="avatar-stack" title={people.map((p) => p.name).join(', ')}>
+      {shown.map((p) => (
+        <span className="circle" key={p.id} style={{ background: avatarColor(p.id) }}>
+          {initials(p.name)}
+        </span>
+      ))}
+      {rest > 0 && <span className="circle more">+{rest}</span>}
+    </span>
+  )
+}
+
 export function Avatar({ userId }) {
   const user = personById(userId)
   if (!user) {
@@ -74,7 +94,7 @@ export default function TaskCard({ task, onClick, onDragStart, onDragEnd, draggi
       )}
 
       <div className="card-foot">
-        <Avatar userId={task.assignee} />
+        <AvatarStack userIds={task.assignees} />
         {task.attachments?.length > 0 && (
           <span className="attach-count" title={`Вложений: ${task.attachments.length}`}>
             📎 {task.attachments.length}
