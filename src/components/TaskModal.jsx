@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DEPARTMENTS, STATUSES, PRIORITIES } from '../data.js'
 import { getAllPeople } from '../auth.js'
 
 const blank = {
   title: '',
   description: '',
+  measure: '',
+  relevance: '',
   dept: DEPARTMENTS[0].id,
   assignee: '',
   status: 'todo',
@@ -13,18 +15,42 @@ const blank = {
   tags: [],
 }
 
-// Форма создания и редактирования задачи
+// Проверка задачи по критериям SMART
+export function smartCheck(form) {
+  return {
+    S: form.title.trim().length >= 5,
+    M: form.measure.trim().length >= 3,
+    A: Boolean(form.assignee),
+    R: form.relevance.trim().length >= 3,
+    T: Boolean(form.due),
+  }
+}
+
+const SMART_META = [
+  { key: 'S', label: 'Specific', ru: 'Конкретность', hint: 'Понятное название задачи (от 5 символов)' },
+  { key: 'M', label: 'Measurable', ru: 'Измеримость', hint: 'Заполнен измеримый результат' },
+  { key: 'A', label: 'Achievable', ru: 'Достижимость', hint: 'Назначен ответственный' },
+  { key: 'R', label: 'Relevant', ru: 'Значимость', hint: 'Указано, какой цели служит задача' },
+  { key: 'T', label: 'Time-bound', ru: 'Срок', hint: 'Установлен срок выполнения' },
+]
+
+// Форма создания и редактирования задачи по технологии SMART
 export default function TaskModal({ task, onClose, onSave, onDelete }) {
   const isEdit = Boolean(task?.id)
   const [form, setForm] = useState(blank)
   const [tagInput, setTagInput] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    if (task) setForm({ ...blank, ...task })
+    if (task) setForm({ ...blank, ...task, assignee: task.assignee || '' })
     else setForm(blank)
+    setError('')
   }, [task])
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const smart = useMemo(() => smartCheck(form), [form])
+  const smartDone = Object.values(smart).filter(Boolean).length
 
   // Люди (аккаунты + сотрудники): сначала из выбранного отдела, затем остальные
   const sortedEmployees = getAllPeople().sort((a, b) => {
@@ -41,7 +67,14 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
 
   const submit = (e) => {
     e.preventDefault()
-    if (!form.title.trim()) return
+    const missing = SMART_META.filter((m) => !smart[m.key])
+    if (missing.length > 0) {
+      setError(
+        'Задача не соответствует SMART. Заполните: ' +
+          missing.map((m) => `${m.key} — ${m.ru.toLowerCase()}`).join(', '),
+      )
+      return
+    }
     onSave({ ...form, assignee: form.assignee || null })
     onClose()
   }
@@ -50,31 +83,61 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <form className="modal" onSubmit={submit}>
         <div className="modal-head">
-          <h2>{isEdit ? 'Редактировать задачу' : 'Новая задача'}</h2>
+          <h2>{isEdit ? 'Редактировать задачу' : 'Новая задача по SMART'}</h2>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Закрыть">×</button>
         </div>
 
         <div className="modal-body">
+          {/* SMART-индикатор */}
+          <div className="smart-meter">
+            {SMART_META.map((m) => (
+              <div
+                key={m.key}
+                className={`smart-chip ${smart[m.key] ? 'ok' : ''}`}
+                title={`${m.label} · ${m.ru}: ${m.hint}`}
+              >
+                <span className="smart-letter">{smart[m.key] ? '✓' : m.key}</span>
+                {m.ru}
+              </div>
+            ))}
+            <span className="smart-score">{smartDone}/5</span>
+          </div>
+
           <div className="field">
-            <label>Название</label>
+            <label>
+              Название <span className="smart-mark">S — конкретность</span>
+            </label>
             <input
               autoFocus
-              placeholder="Что нужно сделать?"
+              placeholder="Что именно нужно сделать? Например: «Согласовать 5 интеграций с блогерами»"
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
             />
           </div>
 
           <div className="field">
-            <label>Описание</label>
-            <textarea
-              placeholder="Детали, критерии готовности, ссылки…"
-              value={form.description}
-              onChange={(e) => set('description', e.target.value)}
+            <label>
+              Измеримый результат <span className="smart-mark">M — измеримость</span>
+            </label>
+            <input
+              placeholder="Как поймём, что задача выполнена? Цифры, критерии: «5 договоров подписано»"
+              value={form.measure}
+              onChange={(e) => set('measure', e.target.value)}
             />
           </div>
 
           <div className="field-row">
+            <div className="field">
+              <label>
+                Ответственный <span className="smart-mark">A — достижимость</span>
+              </label>
+              <select value={form.assignee || ''} onChange={(e) => set('assignee', e.target.value)}>
+                <option value="">Не назначен</option>
+                {sortedEmployees.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name} — {u.role}</option>
+                ))}
+              </select>
+            </div>
             <div className="field">
               <label>Отдел</label>
               <select value={form.dept} onChange={(e) => set('dept', e.target.value)}>
@@ -83,25 +146,25 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                 ))}
               </select>
             </div>
-            <div className="field">
-              <label>Ответственный</label>
-              <select value={form.assignee || ''} onChange={(e) => set('assignee', e.target.value)}>
-                <option value="">Не назначен</option>
-                {sortedEmployees.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name} — {u.role}</option>
-                ))}
-              </select>
-            </div>
+          </div>
+
+          <div className="field">
+            <label>
+              Цель задачи <span className="smart-mark">R — значимость</span>
+            </label>
+            <input
+              placeholder="Зачем это компании? Например: «Рост продаж осеннего потока»"
+              value={form.relevance}
+              onChange={(e) => set('relevance', e.target.value)}
+            />
           </div>
 
           <div className="field-row">
             <div className="field">
-              <label>Статус</label>
-              <select value={form.status} onChange={(e) => set('status', e.target.value)}>
-                {STATUSES.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+              <label>
+                Срок выполнения <span className="smart-mark">T — время</span>
+              </label>
+              <input type="date" value={form.due || ''} onChange={(e) => set('due', e.target.value)} />
             </div>
             <div className="field">
               <label>Приоритет</label>
@@ -114,44 +177,60 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
           </div>
 
           <div className="field">
-            <label>Срок выполнения</label>
-            <input type="date" value={form.due || ''} onChange={(e) => set('due', e.target.value)} />
+            <label>Описание (по желанию)</label>
+            <textarea
+              placeholder="Детали, шаги, ссылки…"
+              value={form.description}
+              onChange={(e) => set('description', e.target.value)}
+            />
           </div>
 
-          <div className="field">
-            <label>Теги</label>
-            <input
-              placeholder="Введите тег и нажмите Enter"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  addTag()
-                }
-              }}
-            />
-            {form.tags.length > 0 && (
-              <div className="card-tags" style={{ marginTop: 8 }}>
-                {form.tags.map((t) => (
-                  <span
-                    className="tag"
-                    key={t}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => set('tags', form.tags.filter((x) => x !== t))}
-                    title="Удалить тег"
-                  >
-                    #{t} ×
-                  </span>
+          <div className="field-row">
+            <div className="field">
+              <label>Статус</label>
+              <select value={form.status} onChange={(e) => set('status', e.target.value)}>
+                {STATUSES.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
-              </div>
-            )}
+              </select>
+            </div>
+            <div className="field">
+              <label>Теги</label>
+              <input
+                placeholder="Тег + Enter"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addTag()
+                  }
+                }}
+              />
+            </div>
           </div>
+          {form.tags.length > 0 && (
+            <div className="card-tags">
+              {form.tags.map((t) => (
+                <span
+                  className="tag"
+                  key={t}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => set('tags', form.tags.filter((x) => x !== t))}
+                  title="Удалить тег"
+                >
+                  #{t} ×
+                </span>
+              ))}
+            </div>
+          )}
+
+          {error && <div className="auth-error">{error}</div>}
         </div>
 
         <div className="modal-foot">
           <button type="submit" className="btn btn-primary">
-            {isEdit ? 'Сохранить' : 'Создать задачу'}
+            {isEdit ? 'Сохранить' : 'Поставить задачу'}
           </button>
           <button type="button" className="btn" onClick={onClose}>Отмена</button>
           {isEdit && (

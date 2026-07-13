@@ -38,11 +38,12 @@ export default function TaskCard({ task, onClick, onDragStart, onDragEnd, draggi
   const dept = byId(DEPARTMENTS, task.dept)
   const prio = byId(PRIORITIES, task.priority)
   const dl = deadlineState(task.due)
+  const isBurning = dl === 'overdue' && task.status !== 'done'
 
   return (
     <div
-      className={`card ${dragging ? 'dragging' : ''}`}
-      style={{ borderLeftColor: prio?.color }}
+      className={`card ${dragging ? 'dragging' : ''} ${isBurning ? 'burning' : ''}`}
+      style={{ borderLeftColor: isBurning ? 'var(--danger)' : prio?.color }}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -52,10 +53,16 @@ export default function TaskCard({ task, onClick, onDragStart, onDragEnd, draggi
         <span className="chip" style={{ background: (dept?.color || '#888') + '1a', color: dept?.color }}>
           {dept?.icon} {dept?.name}
         </span>
+        {isBurning && <span className="chip chip-burning">🔥 Просрочена</span>}
         <span className="priority-flag" style={{ background: prio?.color, marginLeft: 'auto' }} title={`Приоритет: ${prio?.name}`} />
       </div>
 
       <p className="card-title">{task.title}</p>
+      {task.measure && (
+        <p className="card-measure" title={`Измеримый результат: ${task.measure}`}>
+          🎯 {task.measure}
+        </p>
+      )}
       {task.description && <p className="card-desc">{task.description}</p>}
 
       {task.tags?.length > 0 && (

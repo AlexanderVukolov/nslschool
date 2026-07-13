@@ -19,8 +19,9 @@ export default function TaskList({ tasks, onOpenTask }) {
         const st = byId(STATUSES, t.status)
         const prio = byId(PRIORITIES, t.priority)
         const dl = deadlineState(t.due)
+        const isBurning = dl === 'overdue' && t.status !== 'done'
         return (
-          <div className="list-row" key={t.id} onClick={() => onOpenTask(t)}>
+          <div className={`list-row ${isBurning ? 'burning-row' : ''}`} key={t.id} onClick={() => onOpenTask(t)}>
             <div className="list-title">
               <span className="priority-flag" style={{ background: prio?.color, marginRight: 7 }} />
               {t.title}

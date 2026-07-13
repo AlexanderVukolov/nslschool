@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { DEPARTMENTS, PRIORITIES, byId } from './data.js'
-import { useStore, useFilteredTasks } from './useStore.js'
+import { useStore, useFilteredTasks, deadlineState } from './useStore.js'
 import { getCurrentUser, getAllPeople, clearSession } from './auth.js'
 import Sidebar from './components/Sidebar.jsx'
 import Board from './components/Board.jsx'
@@ -8,6 +8,7 @@ import TaskList from './components/TaskList.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import TaskModal from './components/TaskModal.jsx'
 import AuthScreen from './components/AuthScreen.jsx'
+import OverdueAlert from './components/OverdueAlert.jsx'
 import { avatarColor, initials } from './components/TaskCard.jsx'
 
 const DEFAULT_FILTERS = {
@@ -58,6 +59,16 @@ export default function App() {
   const activeDept = filters.dept !== 'all' ? byId(DEPARTMENTS, filters.dept) : null
   const isDashboard = view === 'dashboard'
   const isMyTasks = !isDashboard && filters.assignee === user.id
+
+  // Просроченные незакрытые задачи — для напоминания
+  const overdueTasks = store.tasks.filter(
+    (t) => t.status !== 'done' && deadlineState(t.due) === 'overdue',
+  )
+
+  const showOverdue = () => {
+    setView('board')
+    setFilters({ ...DEFAULT_FILTERS, onlyOverdue: true })
+  }
 
   return (
     <div className="app">
@@ -198,6 +209,8 @@ export default function App() {
           )}
         </div>
       </div>
+
+      <OverdueAlert overdueTasks={overdueTasks} onShow={showOverdue} onOpenTask={openTask} />
 
       {modal && (
         <TaskModal
