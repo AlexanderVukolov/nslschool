@@ -52,9 +52,13 @@ const SMART_META = [
   { key: 'T', label: 'Time-bound', ru: 'Срок', hint: 'Установлен срок выполнения' },
 ]
 
-// Форма создания и редактирования задачи по технологии SMART
-export default function TaskModal({ task, onClose, onSave, onDelete }) {
+// Форма создания и редактирования задачи по технологии SMART.
+// role: 'owner' — автор/админ (всё можно), 'worker' — исполнитель
+// (статус, результат, вложения), 'viewer' — только просмотр
+export default function TaskModal({ task, onClose, onSave, onDelete, role = 'owner' }) {
   const isEdit = Boolean(task?.id)
+  const canOwn = role === 'owner'
+  const canWork = role !== 'viewer'
   const [form, setForm] = useState(blank)
   const [tagInput, setTagInput] = useState('')
   const [linkInput, setLinkInput] = useState('')
@@ -183,6 +187,16 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
             </p>
           )}
 
+          {isEdit && role === 'worker' && (
+            <p className="push-note">
+              Вы исполнитель: можно менять статус, результат и вложения. Остальные поля меняет
+              постановщик задачи.
+            </p>
+          )}
+          {isEdit && role === 'viewer' && (
+            <p className="push-note">Только просмотр: редактировать задачу могут постановщик и исполнители.</p>
+          )}
+
           {/* SMART-индикатор */}
           <div className="smart-meter">
             {SMART_META.map((m) => (
@@ -204,6 +218,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
             </label>
             <input
               autoFocus
+              disabled={!canOwn}
               placeholder="Что именно нужно сделать? Например: «Согласовать 5 интеграций с блогерами»"
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
@@ -215,6 +230,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
               Измеримый результат <span className="smart-mark">M — измеримость</span>
             </label>
             <input
+              disabled={!canOwn}
               placeholder="Как поймём, что задача выполнена? Цифры, критерии: «5 договоров подписано»"
               value={form.measure}
               onChange={(e) => set('measure', e.target.value)}
@@ -227,6 +243,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                 Ответственные <span className="smart-mark">A — достижимость</span>
               </label>
               <div className="assignee-picker">
+                {canOwn && (
                 <button
                   type="button"
                   className="picker-toggle"
@@ -235,7 +252,8 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                   {form.assignees.length > 0 ? '+ Добавить ещё…' : 'Выберите сотрудника…'}
                   <span className="caret">▾</span>
                 </button>
-                {pickerOpen && (
+                )}
+                {canOwn && pickerOpen && (
                   <>
                     <div className="menu-backdrop" onClick={() => setPickerOpen(false)} />
                     <div className="picker-menu">
@@ -274,11 +292,12 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                       <span
                         className="assignee-chip"
                         key={id}
-                        onClick={() => set('assignees', form.assignees.filter((x) => x !== id))}
-                        title="Убрать ответственного"
+                        onClick={() => canOwn && set('assignees', form.assignees.filter((x) => x !== id))}
+                        title={canOwn ? 'Убрать ответственного' : undefined}
+                        style={canOwn ? undefined : { cursor: 'default' }}
                       >
                         <PersonCircle person={person} className="circle chip-ava" />
-                        {person?.name || 'Неизвестный'} ×
+                        {person?.name || 'Неизвестный'}{canOwn ? ' ×' : ''}
                       </span>
                     )
                   })}
@@ -287,7 +306,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
             </div>
             <div className="field">
               <label>Отдел</label>
-              <select value={form.dept} onChange={(e) => set('dept', e.target.value)}>
+              <select value={form.dept} disabled={!canOwn} onChange={(e) => set('dept', e.target.value)}>
                 {DEPARTMENTS.map((d) => (
                   <option key={d.id} value={d.id}>{d.icon} {d.name}</option>
                 ))}
@@ -300,6 +319,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
               Цель задачи <span className="smart-mark">R — значимость</span>
             </label>
             <input
+              disabled={!canOwn}
               placeholder="Зачем это компании? Например: «Рост продаж осеннего потока»"
               value={form.relevance}
               onChange={(e) => set('relevance', e.target.value)}
@@ -312,9 +332,10 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                 Срок выполнения <span className="smart-mark">T — время</span>
               </label>
               <div className="due-row">
-                <input type="date" value={form.due || ''} onChange={(e) => set('due', e.target.value)} />
+                <input type="date" disabled={!canOwn} value={form.due || ''} onChange={(e) => set('due', e.target.value)} />
                 <input
                   type="time"
+                  disabled={!canOwn}
                   value={form.dueTime || ''}
                   onChange={(e) => set('dueTime', e.target.value)}
                   title="Время (необязательно)"
@@ -323,7 +344,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
             </div>
             <div className="field">
               <label>Приоритет</label>
-              <select value={form.priority} onChange={(e) => set('priority', e.target.value)}>
+              <select value={form.priority} disabled={!canOwn} onChange={(e) => set('priority', e.target.value)}>
                 {PRIORITIES.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -337,6 +358,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                 Результат выполнения <span className="smart-mark result-mark">обязательно для «Готово»</span>
               </label>
               <textarea
+                disabled={!canWork}
                 placeholder="Что сделано по факту: цифры, ссылки, итог. Без этого задачу нельзя завершить."
                 value={form.result}
                 onChange={(e) => set('result', e.target.value)}
@@ -348,6 +370,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
           <div className="field">
             <label>Описание (по желанию)</label>
             <textarea
+              disabled={!canOwn}
               placeholder="Детали, шаги, ссылки…"
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
@@ -356,6 +379,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
 
           <div className="field">
             <label>Вложения 📎</label>
+            {canWork && (
             <div className="attach-controls">
               <input
                 placeholder="Вставьте ссылку (диск, документ, чат…) и нажмите Enter"
@@ -384,6 +408,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                 />
               </label>
             </div>
+            )}
             {attachError && <div className="attach-error">{attachError}</div>}
             {form.attachments.length > 0 && (
               <ul className="attach-list">
@@ -401,14 +426,16 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                       {a.name}
                     </a>
                     {a.type === 'file' && <span className="attach-size">{formatSize(a.size)}</span>}
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      onClick={() => removeAttachment(a.id)}
-                      aria-label="Удалить вложение"
-                    >
-                      ×
-                    </button>
+                    {canWork && (
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        onClick={() => removeAttachment(a.id)}
+                        aria-label="Удалить вложение"
+                      >
+                        ×
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -418,7 +445,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
           <div className="field-row">
             <div className="field">
               <label>Статус</label>
-              <select value={form.status} onChange={(e) => set('status', e.target.value)}>
+              <select value={form.status} disabled={!canWork} onChange={(e) => set('status', e.target.value)}>
                 {STATUSES.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -428,6 +455,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
               <label>Теги</label>
               <input
                 placeholder="Тег + Enter"
+                disabled={!canOwn}
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -459,11 +487,15 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
         </div>
 
         <div className="modal-foot">
-          <button type="submit" className="btn btn-primary">
-            {isEdit ? 'Сохранить' : 'Поставить задачу'}
+          {canWork && (
+            <button type="submit" className="btn btn-primary">
+              {isEdit ? 'Сохранить' : 'Поставить задачу'}
+            </button>
+          )}
+          <button type="button" className="btn" onClick={onClose}>
+            {canWork ? 'Отмена' : 'Закрыть'}
           </button>
-          <button type="button" className="btn" onClick={onClose}>Отмена</button>
-          {isEdit && (
+          {isEdit && canOwn && (
             <button
               type="button"
               className="btn btn-danger"

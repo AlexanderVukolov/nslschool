@@ -199,6 +199,15 @@ export default function App() {
   const openTask = (task) => setModal(task)
   const closeModal = () => setModal(null)
 
+  // Роль текущего пользователя в задаче:
+  // owner — автор/админ/старые задачи; worker — исполнитель; viewer — остальные
+  const taskRole = (task) => {
+    if (!task || task === 'new' || !task.id) return 'owner'
+    if (admin || !task.createdBy || task.createdBy === user.id) return 'owner'
+    if ((task.assignees || []).includes(user.id)) return 'worker'
+    return 'viewer'
+  }
+
   // Уведомить о выполнении: ответственных и автора задачи,
   // кроме того, кто сам перевёл её в «Готово»
   const notifyDone = (task) => {
@@ -262,6 +271,18 @@ export default function App() {
 
   const handleSave = (data) => {
     if (modal && modal !== 'new' && modal.id) {
+      const role = taskRole(modal)
+      if (role === 'viewer') return
+      // Исполнитель меняет только статус, результат и вложения —
+      // поля постановщика берём из исходной задачи
+      if (role === 'worker') {
+        data = {
+          ...modal,
+          status: data.status,
+          result: data.result,
+          attachments: data.attachments,
+        }
+      }
       store.updateTask(modal.id, data)
       if (data.status === 'done' && modal.status !== 'done') {
         notifyDone({ ...modal, ...data })
@@ -281,6 +302,7 @@ export default function App() {
   const handleMove = (id, status) => {
     const task = store.tasks.find((t) => t.id === id)
     if (!task) return
+    if (taskRole(task) === 'viewer') return // двигать может автор или исполнитель
     // В «Готово» — только с описанным результатом
     if (status === 'done' && task.status !== 'done' && !(task.result || '').trim()) {
       setCompleting(task)
@@ -528,6 +550,7 @@ export default function App() {
       {modal && (
         <TaskModal
           task={modal === 'new' ? null : modal}
+          role={taskRole(modal)}
           onClose={closeModal}
           onSave={handleSave}
           onDelete={store.removeTask}
