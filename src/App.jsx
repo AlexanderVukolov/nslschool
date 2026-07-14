@@ -313,7 +313,10 @@ export default function App() {
           setNavOpen(false)
         }}
         onSelectDept={(d) => {
-          setFilter('dept', d)
+          setFilters((f) => ({ ...f, dept: d, assignee: 'all' }))
+        }}
+        onSelectPerson={(id) => {
+          setFilter('assignee', id)
           setNavOpen(false)
         }}
         onMyTasks={() => {
