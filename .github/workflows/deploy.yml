@@ -36,8 +36,19 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Пауза: даём предыдущему Pages-деплою завершиться (защита от
-      # «due to in progress deployment» при частых пушах подряд)
-      - run: sleep 60
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+      # Снимаем зависшие Pages-деплои предыдущих коммитов — иначе они
+      # блокируют публикацию ошибкой «due to in progress deployment»
+      - name: Cancel stuck Pages deployments
+        run: |
+          for sha in $(git log --format=%H -8 HEAD~1 2>/dev/null || true); do
+            curl -s -o /dev/null -X POST \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/pages/deployments/$sha/cancel" || true
+          done
+      - run: sleep 10
       - id: deployment
         uses: actions/deploy-pages@v4
