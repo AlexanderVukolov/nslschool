@@ -106,6 +106,7 @@ const taskToApp = (r) => ({
   due: r.due || '',
   dueTime: r.due_time || '',
   createdAt: (r.created_at || '').slice(0, 10),
+  updatedAt: r.updated_at || r.created_at || '',
   createdBy: r.created_by || null,
   tags: r.tags || [],
   attachments: r.attachments || [],

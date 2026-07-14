@@ -1,11 +1,11 @@
 import { DEPARTMENTS, byId } from '../data.js'
-import { isRemoteMode } from '../config.js'
+import { isRemoteMode, isAdminUser } from '../config.js'
 
 // Навигация: обзор, мои задачи, все задачи и фильтр по отделам
 export default function Sidebar({ tasks, view, filters, user, open, onView, onSelectDept, onMyTasks }) {
   const countByDept = (id) => tasks.filter((t) => t.dept === id).length
   const myCount = user ? tasks.filter((t) => (t.assignees || []).includes(user.id)).length : 0
-  const isMyTasks = view !== 'dashboard' && filters.assignee === user?.id
+  const isMyTasks = !['dashboard', 'admin'].includes(view) && filters.assignee === user?.id
 
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
@@ -22,14 +22,22 @@ export default function Sidebar({ tasks, view, filters, user, open, onView, onSe
           className={`nav-item ${view === 'dashboard' ? 'active' : ''}`}
           onClick={() => onView('dashboard')}
         >
-          📈 Обзор
+          📊 Обзор
         </button>
+        {isAdminUser(user) && (
+          <button
+            className={`nav-item ${view === 'admin' ? 'active' : ''}`}
+            onClick={() => onView('admin')}
+          >
+            📈 Отчёт команды
+          </button>
+        )}
         <button className={`nav-item ${isMyTasks ? 'active' : ''}`} onClick={onMyTasks}>
           ⭐ Мои задачи
           <span className="count">{myCount}</span>
         </button>
         <button
-          className={`nav-item ${view !== 'dashboard' && !isMyTasks && filters.dept === 'all' ? 'active' : ''}`}
+          className={`nav-item ${!['dashboard', 'admin'].includes(view) && !isMyTasks && filters.dept === 'all' ? 'active' : ''}`}
           onClick={() => {
             onView('board')
             onSelectDept('all')
@@ -43,7 +51,7 @@ export default function Sidebar({ tasks, view, filters, user, open, onView, onSe
         {DEPARTMENTS.map((d) => (
           <button
             key={d.id}
-            className={`nav-item ${view !== 'dashboard' && filters.dept === d.id ? 'active' : ''}`}
+            className={`nav-item ${!['dashboard', 'admin'].includes(view) && filters.dept === d.id ? 'active' : ''}`}
             onClick={() => {
               onView('board')
               onSelectDept(d.id)

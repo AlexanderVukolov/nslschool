@@ -78,7 +78,9 @@ export function useStore() {
   }, [])
 
   const updateTask = useCallback((id, patch) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t)),
+    )
   }, [])
 
   const removeTask = useCallback((id) => {
@@ -86,7 +88,9 @@ export function useStore() {
   }, [])
 
   const moveTask = useCallback((id, status) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)))
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, status, updatedAt: new Date().toISOString() } : t)),
+    )
   }, [])
 
   const resetDemo = useCallback(() => {

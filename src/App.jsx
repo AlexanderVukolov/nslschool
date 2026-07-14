@@ -26,6 +26,7 @@ import NotificationBell from './components/NotificationBell.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
 import { pushSupported, enablePush } from './push.js'
 import AdminPanel from './components/AdminPanel.jsx'
+import AdminDashboard from './components/AdminDashboard.jsx'
 import { loadNotifications, pushNotification, markAllRead, clearForUser } from './notifications.js'
 import { avatarColor, initials } from './components/TaskCard.jsx'
 
@@ -99,7 +100,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return
     const p = loadUiPrefs(user.id)
-    if (['board', 'list', 'dashboard'].includes(p.view)) setView(p.view)
+    if (['board', 'list', 'dashboard', 'admin'].includes(p.view)) setView(p.view)
     if (['default', 'priority', 'due'].includes(p.sort)) {
       setFilters((f) => ({ ...f, sort: p.sort }))
     }
@@ -284,7 +285,8 @@ export default function App() {
   const tasksById = Object.fromEntries(store.tasks.map((t) => [t.id, t]))
 
   const activeDept = filters.dept !== 'all' ? byId(DEPARTMENTS, filters.dept) : null
-  const isDashboard = view === 'dashboard'
+  const isAdminDash = view === 'admin' && admin
+  const isDashboard = view === 'dashboard' || isAdminDash
   const isMyTasks = !isDashboard && filters.assignee === user.id
 
   // Просроченные незакрытые задачи — для напоминания
@@ -325,7 +327,9 @@ export default function App() {
           <button className="burger" onClick={() => setNavOpen(true)} aria-label="Меню">☰</button>
           <div>
             <h1 className="page-title">
-              {isDashboard
+              {isAdminDash
+                ? '📈 Отчёт команды'
+                : isDashboard
                 ? 'Обзор'
                 : isMyTasks
                 ? '⭐ Мои задачи'
@@ -334,7 +338,9 @@ export default function App() {
                 : 'Все задачи'}
             </h1>
             <p className="page-sub">
-              {isDashboard
+              {isAdminDash
+                ? 'Выполнение и просрочки по сотрудникам'
+                : isDashboard
                 ? 'Сводка по задачам компании'
                 : `${filtered.length} ${plural(filtered.length, 'задача', 'задачи', 'задач')}`}
             </p>
@@ -467,7 +473,9 @@ export default function App() {
         )}
 
         <div className="content">
-          {isDashboard ? (
+          {isAdminDash ? (
+            <AdminDashboard tasks={store.tasks} onOpenTask={openTask} />
+          ) : isDashboard ? (
             <Dashboard tasks={store.tasks} />
           ) : filtered.length === 0 ? (
             <div className="empty-state">
