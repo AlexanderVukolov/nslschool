@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DEPARTMENTS, STATUSES, PRIORITIES } from '../data.js'
 import { getAllPeople, personById } from '../auth.js'
+import { PersonCircle } from './TaskCard.jsx'
 import { isRemoteMode } from '../config.js'
 import { uploadAttachment } from '../remote.js'
 
@@ -56,6 +57,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
   const [form, setForm] = useState(blank)
   const [tagInput, setTagInput] = useState('')
   const [linkInput, setLinkInput] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [attachError, setAttachError] = useState('')
   const [error, setError] = useState('')
 
@@ -218,22 +220,46 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
               <label>
                 Ответственные <span className="smart-mark">A — достижимость</span>
               </label>
-              <select
-                value=""
-                onChange={(e) => {
-                  const id = e.target.value
-                  if (id && !form.assignees.includes(id)) set('assignees', [...form.assignees, id])
-                }}
-              >
-                <option value="">
+              <div className="assignee-picker">
+                <button
+                  type="button"
+                  className="picker-toggle"
+                  onClick={() => setPickerOpen((v) => !v)}
+                >
                   {form.assignees.length > 0 ? '+ Добавить ещё…' : 'Выберите сотрудника…'}
-                </option>
-                {sortedEmployees
-                  .filter((u) => !form.assignees.includes(u.id))
-                  .map((u) => (
-                    <option key={u.id} value={u.id}>{u.name} — {u.role}</option>
-                  ))}
-              </select>
+                  <span className="caret">▾</span>
+                </button>
+                {pickerOpen && (
+                  <>
+                    <div className="menu-backdrop" onClick={() => setPickerOpen(false)} />
+                    <div className="picker-menu">
+                      {sortedEmployees.filter((u) => !form.assignees.includes(u.id)).length === 0 ? (
+                        <div className="picker-empty">Все сотрудники уже добавлены</div>
+                      ) : (
+                        sortedEmployees
+                          .filter((u) => !form.assignees.includes(u.id))
+                          .map((u) => (
+                            <button
+                              type="button"
+                              className="picker-item"
+                              key={u.id}
+                              onClick={() => {
+                                set('assignees', [...form.assignees, u.id])
+                                setPickerOpen(false)
+                              }}
+                            >
+                              <PersonCircle person={u} className="circle picker-ava" />
+                              <span className="picker-name">
+                                {u.name}
+                                <small>{u.role}</small>
+                              </span>
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
               {form.assignees.length > 0 && (
                 <div className="assignee-chips">
                   {form.assignees.map((id) => {
@@ -245,6 +271,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
                         onClick={() => set('assignees', form.assignees.filter((x) => x !== id))}
                         title="Убрать ответственного"
                       >
+                        <PersonCircle person={person} className="circle chip-ava" />
                         {person?.name || 'Неизвестный'} ×
                       </span>
                     )
