@@ -19,7 +19,11 @@ export async function remoteSignUp({ name, email, password, dept, role }) {
   const { data, error } = await supabase.auth.signUp({
     email: email.trim().toLowerCase(),
     password,
-    options: { data: { name: name.trim(), dept, role: role?.trim() || 'Сотрудник' } },
+    options: {
+      data: { name: name.trim(), dept, role: role?.trim() || 'Сотрудник' },
+      // Ссылка из письма-подтверждения ведёт обратно на задачник
+      emailRedirectTo: window.location.origin + window.location.pathname,
+    },
   })
   if (error) throw ruError(error)
   // Если включено подтверждение email — сессии ещё нет
