@@ -69,14 +69,6 @@ export default function App() {
     }
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Значок-цифра на иконке приложения = число непрочитанных уведомлений
-  useEffect(() => {
-    if (!user || !('setAppBadge' in navigator)) return
-    const unread = notifications.filter((n) => n.userId === user.id && !n.read).length
-    if (unread > 0) navigator.setAppBadge(unread).catch(() => {})
-    else navigator.clearAppBadge?.().catch(() => {})
-  }, [notifications, user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const enablePushNow = () => {
     enablePush(user.id)
       .then(() => setPushPrompt(false))
@@ -91,6 +83,14 @@ export default function App() {
     setPushPrompt(false)
   }
   const [notifications, setNotifications] = useState(REMOTE ? [] : loadNotifications)
+
+  // Значок-цифра на иконке приложения = число непрочитанных уведомлений
+  useEffect(() => {
+    if (!user || !('setAppBadge' in navigator)) return
+    const unread = notifications.filter((n) => n.userId === user.id && !n.read).length
+    if (unread > 0) navigator.setAppBadge(unread).catch(() => {})
+    else navigator.clearAppBadge?.().catch(() => {})
+  }, [notifications, user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [, setPeopleVersion] = useState(0) // тик после загрузки profiles, чтобы обновить аватары
 
   // Удалённый режим: восстановление сессии при открытии
