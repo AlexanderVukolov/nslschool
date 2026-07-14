@@ -88,12 +88,9 @@ export default function AuthScreen({ onAuth }) {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={submit}>
-        <div className="auth-brand">
-          <div className="brand-logo">🌿</div>
-          <div>
-            <div className="brand-title">Задачник NSL</div>
-            <div className="brand-sub">Лига нутрициологии</div>
-          </div>
+        <div className="auth-brand auth-brand-logo">
+          <img className="auth-logo" src="./logo-full.png" alt="NSL — Лига нутрициологии" />
+          <div className="brand-sub">Задачник · Лига нутрициологии</div>
         </div>
 
         <div className="seg auth-tabs">

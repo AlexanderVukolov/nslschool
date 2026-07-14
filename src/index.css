@@ -793,6 +793,24 @@ textarea {
   gap: 10px;
   margin-bottom: 4px;
 }
+.auth-brand-logo {
+  flex-direction: column;
+  gap: 4px;
+}
+.auth-logo {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+}
+.brand-logo-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #fff;
+}
 .auth-tabs {
   align-self: stretch;
   display: grid;

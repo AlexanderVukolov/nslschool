@@ -10,7 +10,7 @@ export default function Sidebar({ tasks, view, filters, user, open, onView, onSe
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
       <div className="brand">
-        <div className="brand-logo">🌿</div>
+        <img className="brand-logo-img" src="./logo-mark.png" alt="NSL" />
         <div>
           <div className="brand-title">Задачник NSL</div>
           <div className="brand-sub">Лига нутрициологии</div>

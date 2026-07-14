@@ -25,8 +25,8 @@ self.addEventListener('push', (e) => {
     (async () => {
       await self.registration.showNotification(data.title || 'Задачник NSL', {
         body: data.body || '',
-        icon: 'icon.svg',
-        badge: 'icon.svg',
+        icon: 'icon-192.png',
+        badge: 'icon-192.png',
         lang: 'ru',
         data: { url: data.url || self.registration.scope },
       })
