@@ -4,7 +4,6 @@ import { isRemoteMode } from '../config.js'
 // Навигация: обзор, мои задачи, все задачи и фильтр по отделам
 export default function Sidebar({ tasks, view, filters, user, open, onView, onSelectDept, onMyTasks }) {
   const countByDept = (id) => tasks.filter((t) => t.dept === id).length
-  const activeDepts = DEPARTMENTS.filter((d) => countByDept(d.id) > 0)
   const myCount = user ? tasks.filter((t) => (t.assignees || []).includes(user.id)).length : 0
   const isMyTasks = view !== 'dashboard' && filters.assignee === user?.id
 
@@ -41,7 +40,7 @@ export default function Sidebar({ tasks, view, filters, user, open, onView, onSe
         </button>
 
         <div className="nav-section">Отделы</div>
-        {activeDepts.map((d) => (
+        {DEPARTMENTS.map((d) => (
           <button
             key={d.id}
             className={`nav-item ${view !== 'dashboard' && filters.dept === d.id ? 'active' : ''}`}
