@@ -352,21 +352,6 @@ export default function TaskModal({ task, onClose, onSave, onDelete, role = 'own
             </div>
           </div>
 
-          {isEdit && (
-            <div className="field">
-              <label>
-                Результат выполнения <span className="smart-mark result-mark">обязательно для «Готово»</span>
-              </label>
-              <textarea
-                disabled={!canWork}
-                placeholder="Что сделано по факту: цифры, ссылки, итог. Без этого задачу нельзя завершить."
-                value={form.result}
-                onChange={(e) => set('result', e.target.value)}
-                rows={2}
-              />
-            </div>
-          )}
-
           <div className="field">
             <label>Описание (по желанию)</label>
             <textarea
@@ -441,6 +426,21 @@ export default function TaskModal({ task, onClose, onSave, onDelete, role = 'own
               </ul>
             )}
           </div>
+
+          {isEdit && (
+            <div className="field">
+              <label>
+                Результат выполнения <span className="smart-mark result-mark">обязательно для «Готово»</span>
+              </label>
+              <textarea
+                disabled={!canWork}
+                placeholder="Что сделано по факту: цифры, ссылки, итог. Без этого задачу нельзя завершить."
+                value={form.result}
+                onChange={(e) => set('result', e.target.value)}
+                rows={2}
+              />
+            </div>
+          )}
 
           <div className="field-row">
             <div className="field">
