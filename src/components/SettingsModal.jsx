@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DEPARTMENTS } from '../data.js'
+import { isRemoteMode } from '../config.js'
+import { pushStatus, enablePush, disablePush } from '../push.js'
 
 // Настройки кабинета: имя, отдел, должность
 export default function SettingsModal({ user, onClose, onSave }) {
@@ -10,6 +12,31 @@ export default function SettingsModal({ user, onClose, onSave }) {
   })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [push, setPush] = useState('loading') // loading|on|off|denied|unsupported
+  const [pushMsg, setPushMsg] = useState('')
+
+  useEffect(() => {
+    if (isRemoteMode()) pushStatus().then(setPush)
+    else setPush('unsupported')
+  }, [])
+
+  const togglePush = async () => {
+    setPushMsg('')
+    try {
+      if (push === 'on') {
+        await disablePush()
+        setPush('off')
+        setPushMsg('Push-уведомления на этом устройстве выключены')
+      } else {
+        await enablePush(user.id)
+        setPush('on')
+        setPushMsg('Готово! Уведомления будут приходить на это устройство')
+      }
+    } catch (err) {
+      setPushMsg(err.message)
+      pushStatus().then(setPush)
+    }
+  }
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -64,6 +91,36 @@ export default function SettingsModal({ user, onClose, onSave }) {
             <label>Email</label>
             <input value={user.email} disabled title="Email изменить нельзя — он привязан к аккаунту" />
           </div>
+
+          {isRemoteMode() && (
+            <div className="field">
+              <label>Push-уведомления на этом устройстве</label>
+              {push === 'unsupported' ? (
+                <p className="push-note">
+                  Браузер не поддерживает push. На iPhone установите задачник на главный экран
+                  («Поделиться» → «На экран Домой») и откройте настройки из него.
+                </p>
+              ) : push === 'denied' ? (
+                <p className="push-note">
+                  Уведомления запрещены в браузере. Разрешите их в настройках сайта и вернитесь сюда.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  className={`btn ${push === 'on' ? '' : 'btn-primary'}`}
+                  disabled={push === 'loading'}
+                  onClick={togglePush}
+                >
+                  {push === 'loading'
+                    ? 'Проверяю…'
+                    : push === 'on'
+                    ? '🔕 Выключить уведомления'
+                    : '🔔 Включить уведомления'}
+                </button>
+              )}
+              {pushMsg && <p className="push-note">{pushMsg}</p>}
+            </div>
+          )}
 
           {error && <div className="auth-error">{error}</div>}
         </div>
