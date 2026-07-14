@@ -10,6 +10,7 @@ const blank = {
   description: '',
   measure: '',
   relevance: '',
+  result: '',
   dept: DEPARTMENTS[0].id,
   assignees: [],
   status: 'todo',
@@ -155,6 +156,11 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
         'Задача не соответствует SMART. Заполните: ' +
           missing.map((m) => `${m.key} — ${m.ru.toLowerCase()}`).join(', '),
       )
+      return
+    }
+    // Завершить задачу можно только с описанием результата
+    if (form.status === 'done' && !form.result.trim()) {
+      setError('Чтобы завершить задачу, опишите результат выполнения — что сделано по факту.')
       return
     }
     onSave(form)
@@ -324,6 +330,20 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
               </select>
             </div>
           </div>
+
+          {isEdit && (
+            <div className="field">
+              <label>
+                Результат выполнения <span className="smart-mark result-mark">обязательно для «Готово»</span>
+              </label>
+              <textarea
+                placeholder="Что сделано по факту: цифры, ссылки, итог. Без этого задачу нельзя завершить."
+                value={form.result}
+                onChange={(e) => set('result', e.target.value)}
+                rows={2}
+              />
+            </div>
+          )}
 
           <div className="field">
             <label>Описание (по желанию)</label>

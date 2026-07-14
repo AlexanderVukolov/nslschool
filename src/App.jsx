@@ -27,6 +27,7 @@ import SettingsModal from './components/SettingsModal.jsx'
 import { pushSupported, enablePush } from './push.js'
 import AdminPanel from './components/AdminPanel.jsx'
 import AdminDashboard from './components/AdminDashboard.jsx'
+import CompleteModal from './components/CompleteModal.jsx'
 import { loadNotifications, pushNotification, markAllRead, clearForUser } from './notifications.js'
 import { PersonCircle } from './components/TaskCard.jsx'
 
@@ -61,6 +62,7 @@ export default function App() {
   const [view, setView] = useState('board') // 'board' | 'list' | 'dashboard'
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [modal, setModal] = useState(null) // null | 'new' | task object
+  const [completing, setCompleting] = useState(null) // задача, ожидающая результата для «Готово»
   const [menuOpen, setMenuOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false) // мобильное меню-шторка
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -278,8 +280,23 @@ export default function App() {
 
   const handleMove = (id, status) => {
     const task = store.tasks.find((t) => t.id === id)
+    if (!task) return
+    // В «Готово» — только с описанным результатом
+    if (status === 'done' && task.status !== 'done' && !(task.result || '').trim()) {
+      setCompleting(task)
+      return
+    }
     store.moveTask(id, status)
-    if (task && status === 'done' && task.status !== 'done') notifyDone(task)
+    if (status === 'done' && task.status !== 'done') notifyDone(task)
+  }
+
+  // Подтверждение завершения с результатом (из окна «Завершение задачи»)
+  const handleComplete = (result) => {
+    const task = completing
+    setCompleting(null)
+    if (!task) return
+    store.updateTask(task.id, { ...task, status: 'done', result })
+    notifyDone({ ...task, status: 'done', result })
   }
 
   const tasksById = Object.fromEntries(store.tasks.map((t) => [t.id, t]))
@@ -499,6 +516,14 @@ export default function App() {
       )}
 
       {adminOpen && admin && <AdminPanel onClose={() => setAdminOpen(false)} onChanged={refreshPeople} />}
+
+      {completing && (
+        <CompleteModal
+          task={completing}
+          onCancel={() => setCompleting(null)}
+          onComplete={handleComplete}
+        />
+      )}
 
       {modal && (
         <TaskModal

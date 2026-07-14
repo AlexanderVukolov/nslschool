@@ -1715,6 +1715,23 @@ img.circle {
   padding: 1px 6px;
   margin-left: 4px;
 }
+.result-mark {
+  background: #fef3c7;
+  color: #92400e;
+}
+.card-result {
+  font-size: 12.5px;
+  color: #92400e;
+  background: #fef9ec;
+  border-radius: 7px;
+  padding: 5px 8px;
+  margin: 0 0 8px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .card-measure {
   font-size: 12.5px;
   color: var(--brand-dark);

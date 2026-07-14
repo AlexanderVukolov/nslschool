@@ -23,6 +23,7 @@ create table if not exists public.tasks (
   description text default '',
   measure     text default '',          -- SMART: измеримый результат
   relevance   text default '',          -- SMART: цель/значимость
+  result      text default '',          -- результат выполнения (обязателен для «Готово»)
   dept        text not null,
   assignees   uuid[] default '{}',      -- несколько ответственных
   status      text not null default 'todo',

@@ -95,6 +95,9 @@ export default function TaskCard({ task, onClick, onDragStart, onDragEnd, draggi
         </p>
       )}
       {task.description && <p className="card-desc">{task.description}</p>}
+      {task.status === 'done' && task.result && (
+        <p className="card-result" title={`Результат: ${task.result}`}>🏁 {task.result}</p>
+      )}
 
       {task.tags?.length > 0 && (
         <div className="card-tags">

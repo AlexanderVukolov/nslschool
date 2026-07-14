@@ -62,6 +62,7 @@ export function useStore() {
       description: data.description?.trim() || '',
       measure: data.measure?.trim() || '',
       relevance: data.relevance?.trim() || '',
+      result: data.result?.trim() || '',
       dept: data.dept,
       assignees: data.assignees || [],
       status: data.status || 'todo',
