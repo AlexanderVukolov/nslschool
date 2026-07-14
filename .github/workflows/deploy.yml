@@ -36,5 +36,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Пауза: даём предыдущему Pages-деплою завершиться (защита от
+      # «due to in progress deployment» при частых пушах подряд)
+      - run: sleep 60
       - id: deployment
         uses: actions/deploy-pages@v4
