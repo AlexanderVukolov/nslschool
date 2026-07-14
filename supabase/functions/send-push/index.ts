@@ -30,13 +30,22 @@ Deno.serve(async (req) => {
 
     if (!subs || subs.length === 0) return new Response('no subscriptions')
 
-    const isAssigned = n.type === 'task_assigned'
-    const message = JSON.stringify({
-      title: isAssigned ? 'Новая задача для вас' : 'Задачник NSL',
-      body: isAssigned
-        ? `📌 «${n.task_title}»${n.by_name ? ' — поставил(а) ' + n.by_name : ''}`
-        : `✅ Задача «${n.task_title}» выполнена${n.by_name ? ' — ' + n.by_name : ''}`,
-    })
+    const texts: Record<string, { title: string; body: string }> = {
+      task_assigned: {
+        title: 'Новая задача для вас',
+        body: `📌 «${n.task_title}»${n.by_name ? ' — поставил(а) ' + n.by_name : ''}`,
+      },
+      task_new: {
+        title: 'Новая задача в компании',
+        body: `📋 «${n.task_title}»${n.by_name ? ' — поставил(а) ' + n.by_name : ''}`,
+      },
+      task_done: {
+        title: 'Задачник NSL',
+        body: `✅ Задача «${n.task_title}» выполнена${n.by_name ? ' — ' + n.by_name : ''}`,
+      },
+    }
+    const t = texts[n.type] || texts.task_done
+    const message = JSON.stringify({ title: t.title, body: t.body })
 
     let sent = 0
     for (const s of subs) {

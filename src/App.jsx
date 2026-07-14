@@ -208,18 +208,29 @@ export default function App() {
     return 'viewer'
   }
 
-  // Уведомить о выполнении: ответственных и автора задачи,
+  // Администраторы, которым дублируются все события (кроме их собственных)
+  const otherAdminIds = () =>
+    getAllPeople()
+      .filter((p) => p.id !== user.id && isAdminUser(p))
+      .map((p) => p.id)
+
+  const sendNotif = (payload) => {
+    if (REMOTE) {
+      insertNotification(payload).catch((e) => console.warn('Уведомление не отправлено:', e))
+    } else {
+      setNotifications((list) => pushNotification(list, payload))
+    }
+  }
+
+  // Уведомить о выполнении: ответственных, автора задачи и админов,
   // кроме того, кто сам перевёл её в «Готово»
   const notifyDone = (task) => {
-    const recipients = new Set([...(task?.assignees || []), task?.createdBy].filter(Boolean))
+    const recipients = new Set(
+      [...(task?.assignees || []), task?.createdBy, ...otherAdminIds()].filter(Boolean),
+    )
     recipients.delete(user.id)
     for (const userId of recipients) {
-      const payload = { userId, taskId: task.id, taskTitle: task.title, byName: user.name }
-      if (REMOTE) {
-        insertNotification(payload).catch((e) => console.warn('Уведомление не отправлено:', e))
-      } else {
-        setNotifications((list) => pushNotification(list, payload))
-      }
+      sendNotif({ userId, taskId: task.id, taskTitle: task.title, byName: user.name })
     }
   }
 
@@ -250,22 +261,28 @@ export default function App() {
     if (REMOTE) clearNotifsRemote(user.id)
   }
 
-  // Уведомить сотрудников, что на них поставлена задача (кроме самого автора)
+  // Уведомить о постановке: назначенным — «вам поставлена задача»,
+  // админам — «новая задача» (кроме самого автора)
   const notifyAssigned = (task, userIds) => {
-    for (const userId of userIds || []) {
-      if (!userId || userId === user.id) continue
-      const payload = {
+    const assignees = new Set((userIds || []).filter((id) => id && id !== user.id))
+    for (const userId of assignees) {
+      sendNotif({
         userId,
         taskId: task.id || null,
         taskTitle: task.title,
         byName: user.name,
         type: 'task_assigned',
-      }
-      if (REMOTE) {
-        insertNotification(payload).catch((e) => console.warn('Уведомление не отправлено:', e))
-      } else {
-        setNotifications((list) => pushNotification(list, payload))
-      }
+      })
+    }
+    for (const adminId of otherAdminIds()) {
+      if (assignees.has(adminId)) continue
+      sendNotif({
+        userId: adminId,
+        taskId: task.id || null,
+        taskTitle: task.title,
+        byName: user.name,
+        type: 'task_new',
+      })
     }
   }
 
