@@ -22,13 +22,19 @@ self.addEventListener('push', (e) => {
     data = { body: e.data ? e.data.text() : '' }
   }
   e.waitUntil(
-    self.registration.showNotification(data.title || 'Задачник NSL', {
-      body: data.body || '',
-      icon: 'icon.svg',
-      badge: 'icon.svg',
-      lang: 'ru',
-      data: { url: data.url || self.registration.scope },
-    }),
+    (async () => {
+      await self.registration.showNotification(data.title || 'Задачник NSL', {
+        body: data.body || '',
+        icon: 'icon.svg',
+        badge: 'icon.svg',
+        lang: 'ru',
+        data: { url: data.url || self.registration.scope },
+      })
+      // Значок-цифра на иконке приложения (Android/iOS PWA)
+      try {
+        if (self.navigator.setAppBadge) await self.navigator.setAppBadge()
+      } catch {}
+    })(),
   )
 })
 

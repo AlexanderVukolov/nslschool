@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { DEPARTMENTS } from '../data.js'
 import { isRemoteMode } from '../config.js'
 import { pushStatus, enablePush, disablePush } from '../push.js'
+import { insertNotification } from '../remote.js'
 
 // Настройки кабинета: имя, отдел, должность
 export default function SettingsModal({ user, onClose, onSave }) {
@@ -39,6 +40,25 @@ export default function SettingsModal({ user, onClose, onSave }) {
   }
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  // Тестовое уведомление себе: проверяет всю цепочку до push на телефоне
+  const sendTest = async () => {
+    setPushMsg('')
+    try {
+      await insertNotification({
+        userId: user.id,
+        taskId: null,
+        taskTitle: 'Проверка уведомлений',
+        byName: 'Задачник NSL',
+      })
+      setPushMsg(
+        'Тест отправлен! Колокольчик должен звякнуть сразу, push на телефон — в течение ~10 секунд. ' +
+          'Если push не пришёл — не настроена отправка в Supabase (функция send-push или webhook).',
+      )
+    } catch (e) {
+      setPushMsg('Не удалось отправить тест: ' + e.message)
+    }
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -116,6 +136,11 @@ export default function SettingsModal({ user, onClose, onSave }) {
                     : push === 'on'
                     ? '🔕 Выключить уведомления'
                     : '🔔 Включить уведомления'}
+                </button>
+              )}
+              {push === 'on' && (
+                <button type="button" className="btn btn-sm" style={{ marginTop: 8 }} onClick={sendTest}>
+                  📨 Отправить тестовое уведомление
                 </button>
               )}
               {pushMsg && <p className="push-note">{pushMsg}</p>}
