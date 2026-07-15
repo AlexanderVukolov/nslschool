@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { DEPARTMENTS, byId } from '../data.js'
 import { isRemoteMode } from '../config.js'
 import { loadLocalAccounts, updateLocalProfile } from '../auth.js'
-import { fetchProfiles, updateProfileRemote } from '../remote.js'
+import { fetchProfiles, updateProfileRemote, fetchPushStats } from '../remote.js'
 import { PersonCircle } from './TaskCard.jsx'
 
 // Панель администратора: все сотрудники, перемещение по отделам,
@@ -10,6 +10,7 @@ import { PersonCircle } from './TaskCard.jsx'
 export default function AdminPanel({ onClose, onChanged }) {
   const remote = isRemoteMode()
   const [people, setPeople] = useState(null) // null = загрузка
+  const [pushStats, setPushStats] = useState(null) // {userId: количество устройств}
   const [error, setError] = useState('')
 
   const load = () => {
@@ -17,6 +18,9 @@ export default function AdminPanel({ onClose, onChanged }) {
       fetchProfiles()
         .then(setPeople)
         .catch((e) => setError('Не удалось загрузить сотрудников: ' + e.message))
+      fetchPushStats()
+        .then(setPushStats)
+        .catch(() => setPushStats(null)) // нет политики push-admin.sql — просто не показываем
     } else {
       setPeople(loadLocalAccounts())
     }
@@ -50,7 +54,7 @@ export default function AdminPanel({ onClose, onChanged }) {
           ) : (
             <div className="admin-list">
               {people.map((p) => (
-                <EmployeeRow key={p.id} person={p} onSave={save} />
+                <EmployeeRow key={p.id} person={p} pushStats={pushStats} onSave={save} />
               ))}
             </div>
           )}
@@ -60,7 +64,7 @@ export default function AdminPanel({ onClose, onChanged }) {
   )
 }
 
-function EmployeeRow({ person, onSave }) {
+function EmployeeRow({ person, pushStats, onSave }) {
   const [form, setForm] = useState({
     name: person.name || '',
     dept: person.dept || '',
@@ -102,6 +106,16 @@ function EmployeeRow({ person, onSave }) {
           />
           <span className="admin-email" title={person.email}>{person.email}</span>
           {person.is_admin && <span className="chip admin-chip">админ</span>}
+          {pushStats &&
+            (pushStats[person.id] ? (
+              <span className="chip push-on-chip" title={`Push включён на ${pushStats[person.id]} устр.`}>
+                🔔 {pushStats[person.id]}
+              </span>
+            ) : (
+              <span className="chip push-off-chip" title="Сотрудник не включил push-уведомления на своём устройстве">
+                🔕 без пушей
+              </span>
+            ))}
         </div>
         <div className="admin-line">
           <select value={form.dept || ''} onChange={(e) => set('dept', e.target.value)}>

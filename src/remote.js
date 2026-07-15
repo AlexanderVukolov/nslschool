@@ -227,6 +227,16 @@ export function subscribeNotifications(userId, onInsert) {
     .subscribe()
 }
 
+// Статистика push-подписок по сотрудникам (доступна администратору,
+// нужна политика из supabase/push-admin.sql)
+export async function fetchPushStats() {
+  const { data, error } = await supabase.from('push_subscriptions').select('user_id')
+  if (error) throw error
+  const map = {}
+  for (const r of data || []) map[r.user_id] = (map[r.user_id] || 0) + 1
+  return map
+}
+
 // ---------- Файлы-вложения ----------
 
 export async function uploadAttachment(file) {
