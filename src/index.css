@@ -375,6 +375,17 @@ textarea {
   flex-direction: column;
   max-height: 100%;
 }
+.column-overdue {
+  background: #fff7f7;
+  border-color: #fecaca;
+}
+.column-overdue .column-head {
+  background: #fff7f7;
+}
+.num-danger {
+  background: #fee2e2 !important;
+  color: var(--danger) !important;
+}
 .column.drag-over {
   border-color: var(--brand);
   box-shadow: 0 0 0 2px var(--brand-light);
