@@ -119,6 +119,7 @@ const taskToApp = (r) => ({
   priority: r.priority,
   due: r.due || '',
   dueTime: r.due_time || '',
+  recur: r.recur || '',
   createdAt: (r.created_at || '').slice(0, 10),
   updatedAt: r.updated_at || r.created_at || '',
   createdBy: r.created_by || null,
@@ -138,6 +139,7 @@ const taskToRow = (t) => ({
   priority: t.priority || 'medium',
   due: t.due || null,
   due_time: t.dueTime || null,
+  recur: t.recur || null,
   tags: t.tags || [],
   attachments: t.attachments || [],
 })

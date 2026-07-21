@@ -43,6 +43,17 @@ export const PRIORITIES = [
   { id: 'urgent', name: 'Срочный', color: '#dc2626', weight: 4 },
 ]
 
+// Правила повторения задач
+export const RECURS = [
+  { id: '', name: 'Не повторяется' },
+  { id: 'daily', name: '🔁 Каждый день' },
+  { id: 'weekdays', name: '🔁 По будням (пн–пт)' },
+  { id: 'weekly', name: '🔁 Каждую неделю' },
+  { id: 'monthly', name: '🔁 Каждый месяц' },
+]
+
+export const recurName = (id) => RECURS.find((r) => r.id === id)?.name?.replace('🔁 ', '') || ''
+
 // Хелперы для быстрого доступа
 export const byId = (list, id) => list.find((x) => x.id === id)
 

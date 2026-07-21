@@ -1435,6 +1435,11 @@ img.circle {
     box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
   }
 }
+.chip-recur {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 3px 6px;
+}
 .chip-burning {
   background: #fee2e2;
   color: var(--danger);

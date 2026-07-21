@@ -69,6 +69,7 @@ export function useStore() {
       priority: data.priority || 'medium',
       due: data.due || '',
       dueTime: data.dueTime || '',
+      recur: data.recur || '',
       createdAt: new Date().toISOString().slice(0, 10),
       createdBy: data.createdBy || null,
       tags: data.tags || [],
@@ -119,6 +120,31 @@ export function deadlineState(due, dueTime) {
   d.setHours(0, 0, 0, 0)
   if (Math.round((d - today) / 86400000) <= 2) return 'soon'
   return 'ok'
+}
+
+// Следующий срок повторяющейся задачи: от старого срока (или сегодня,
+// если срок в прошлом) по правилу повторения
+export function nextDueDate(due, recur) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  let d = due ? new Date(due) : new Date(today)
+  d.setHours(0, 0, 0, 0)
+  if (d < today) d = new Date(today)
+  if (recur === 'daily') {
+    d.setDate(d.getDate() + 1)
+  } else if (recur === 'weekdays') {
+    do {
+      d.setDate(d.getDate() + 1)
+    } while (d.getDay() === 0 || d.getDay() === 6)
+  } else if (recur === 'weekly') {
+    d.setDate(d.getDate() + 7)
+  } else if (recur === 'monthly') {
+    d.setMonth(d.getMonth() + 1)
+  } else {
+    return due
+  }
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 export function formatDate(iso, time) {

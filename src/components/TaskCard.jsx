@@ -85,6 +85,11 @@ export default function TaskCard({ task, onClick, onDragStart, onDragEnd, draggi
           {dept?.icon} {dept?.name}
         </span>
         {isBurning && <span className="chip chip-burning">🔥 Просрочена</span>}
+        {task.recur && (
+          <span className="chip chip-recur" title="Повторяющаяся задача — после выполнения пересоздастся на следующий срок">
+            🔁
+          </span>
+        )}
         <span className="priority-flag" style={{ background: prio?.color, marginLeft: 'auto' }} title={`Приоритет: ${prio?.name}`} />
       </div>
 

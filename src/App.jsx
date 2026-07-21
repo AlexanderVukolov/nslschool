@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DEPARTMENTS, PRIORITIES, byId } from './data.js'
-import { useStore, useFilteredTasks, deadlineState } from './useStore.js'
+import { useStore, useFilteredTasks, deadlineState, nextDueDate } from './useStore.js'
 import { getCurrentUser, getActivePeople, clearSession, setPeopleCache, updateLocalProfile } from './auth.js'
 import { isRemoteMode, isAdminUser } from './config.js'
 import { useRemoteStore } from './useRemoteStore.js'
@@ -234,6 +234,28 @@ export default function App() {
     }
   }
 
+  // Повторяющаяся задача: после выполнения тихо создаём следующую копию
+  // на новый срок (без уведомлений — чтобы не шуметь каждый день)
+  const spawnNextIfRecurring = (task) => {
+    if (!task?.recur) return
+    store.addTask({
+      title: task.title,
+      description: task.description,
+      measure: task.measure,
+      relevance: task.relevance,
+      dept: task.dept,
+      assignees: task.assignees || [],
+      status: 'todo',
+      priority: task.priority,
+      due: nextDueDate(task.due, task.recur),
+      dueTime: task.dueTime || '',
+      recur: task.recur,
+      tags: task.tags || [],
+      attachments: (task.attachments || []).filter((a) => a.type === 'link'),
+      createdBy: task.createdBy || user.id,
+    })
+  }
+
   const handleMarkAllRead = () => {
     setNotifications((list) =>
       REMOTE ? list.map((n) => (n.userId === user.id ? { ...n, read: true } : n)) : markAllRead(list, user.id),
@@ -303,6 +325,7 @@ export default function App() {
       store.updateTask(modal.id, data)
       if (data.status === 'done' && modal.status !== 'done') {
         notifyDone({ ...modal, ...data })
+        spawnNextIfRecurring({ ...modal, ...data })
       }
       // Уведомляем только новых ответственных, добавленных при редактировании
       const before = modal.assignees || []
@@ -326,7 +349,10 @@ export default function App() {
       return
     }
     store.moveTask(id, status)
-    if (status === 'done' && task.status !== 'done') notifyDone(task)
+    if (status === 'done' && task.status !== 'done') {
+      notifyDone(task)
+      spawnNextIfRecurring(task)
+    }
   }
 
   // Подтверждение завершения с результатом (из окна «Завершение задачи»)
@@ -336,6 +362,7 @@ export default function App() {
     if (!task) return
     store.updateTask(task.id, { ...task, status: 'done', result })
     notifyDone({ ...task, status: 'done', result })
+    spawnNextIfRecurring(task)
   }
 
   const tasksById = Object.fromEntries(store.tasks.map((t) => [t.id, t]))

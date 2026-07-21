@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { DEPARTMENTS, STATUSES, PRIORITIES } from '../data.js'
+import { DEPARTMENTS, STATUSES, PRIORITIES, RECURS } from '../data.js'
 import { getActivePeople, personById } from '../auth.js'
 import { PersonCircle } from './TaskCard.jsx'
 import { isRemoteMode } from '../config.js'
@@ -17,6 +17,7 @@ const blank = {
   priority: 'medium',
   due: '',
   dueTime: '',
+  recur: '',
   tags: [],
   attachments: [],
 }
@@ -350,6 +351,21 @@ export default function TaskModal({ task, onClose, onSave, onDelete, role = 'own
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="field">
+            <label>Повторение</label>
+            <select value={form.recur || ''} disabled={!canOwn} onChange={(e) => set('recur', e.target.value)}>
+              {RECURS.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            {form.recur && (
+              <p className="push-note">
+                После выполнения задача автоматически пересоздастся на следующий срок —
+                дублировать вручную не нужно.
+              </p>
+            )}
           </div>
 
           <div className="field">

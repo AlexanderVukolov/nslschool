@@ -30,6 +30,7 @@ create table if not exists public.tasks (
   priority    text not null default 'medium',
   due         date,
   due_time    text,                     -- время дедлайна «ЧЧ:ММ» (опционально)
+  recur       text,                     -- повторение: daily/weekdays/weekly/monthly
   tags        text[] default '{}',
   attachments jsonb default '[]',       -- [{type:'link'|'file', name, url, size}]
   created_by  uuid references auth.users (id),
