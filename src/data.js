@@ -2,7 +2,7 @@
 
 // Отделы компании
 export const DEPARTMENTS = [
-  { id: 'bloggers', name: 'Отдел Блогеров', color: '#d946ef', icon: '🎬' },
+  { id: 'bloggers', name: 'Отдел Инфлюенс', color: '#d946ef', icon: '🎬' },
   { id: 'curation', name: 'Отдел Курации', color: '#0284c7', icon: '🧑‍🏫' },
   { id: 'product', name: 'Отдел Продукта', color: '#1f8a4c', icon: '📦' },
   { id: 'sales', name: 'Отдел Продаж', color: '#ea580c', icon: '💼' },
@@ -14,7 +14,7 @@ export const DEPARTMENTS = [
 
 // Сотрудники
 export const EMPLOYEES = [
-  { id: 'u1', name: 'Анна Ковалёва', role: 'Руководитель отдела блогеров', dept: 'bloggers' },
+  { id: 'u1', name: 'Анна Ковалёва', role: 'Руководитель отдела инфлюенс', dept: 'bloggers' },
   { id: 'u2', name: 'Дмитрий Орлов', role: 'Продакт-менеджер', dept: 'product' },
   { id: 'u3', name: 'Мария Соколова', role: 'Старший куратор', dept: 'curation' },
   { id: 'u4', name: 'Игорь Лебедев', role: 'Таргетолог', dept: 'smm' },
